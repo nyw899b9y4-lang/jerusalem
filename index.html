@@ -1249,7 +1249,7 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
   const F = LUPE_FELD, Q = 2;                                  // doppelte Auflösung
   const Lp = [[2675, 1330], [2620, 1790]], Rp = [[2890, 1340], [2805, 1650]];   // Bleistiftränder des Strahls
   const c = document.createElement('canvas'); c.id = 'memLupe'; c.width = F.w * Q; c.height = F.h * Q;
-  c.style.cssText = `position:absolute;left:${F.x}px;top:${F.y}px;width:${F.w}px;height:${F.h}px;pointer-events:none;opacity:0;transition:opacity .6s;z-index:5`;
+  c.style.cssText = `position:absolute;left:${F.x}px;top:${F.y}px;width:${F.w}px;height:${F.h}px;pointer-events:none;opacity:0;transition:opacity .6s;z-index:250`   // über allen Ebenen, auch über der Schwärze;
   wrap.appendChild(c);
   const g = c.getContext('2d');
   // Maske entpacken
@@ -1267,6 +1267,9 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
     innen.push(y * F.w * Q + x); S.push(s); U.push(a / (a + b)); smin = Math.min(smin, s); smax = Math.max(smax, s);
   }
   const S01 = S.map(s => (s - smin) / (smax - smin));
+  // Randpixel des Feldes (für den feinen Umriss, damit die Lupe auch auf der Schwärze erkennbar bleibt)
+  const drin = new Set(innen), RAND = innen.map(i => { const x = i % (F.w * Q), y = (i / (F.w * Q)) | 0, W2 = F.w * Q;
+    return !(drin.has(i - 1) && drin.has(i + 1) && drin.has(i - W2) && drin.has(i + W2)) || x === 0 || y === 0; });
   // Spektrogramme als Pixeldaten
   const SPD = {};
   Object.entries(MEM_SPEC).forEach(([v, s]) => { const i = new Image(); i.onload = () => {
@@ -1281,9 +1284,12 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
     c.style.opacity = an ? 1 : 0;
     if (!an) return;
     const t = MEM_TON.currentTime, pps = sp.w / sp.dur;
+    const schw = document.getElementById('map').classList.contains('schwarz');
+    const gr = schw ? [20, 28, 46] : [10, 14, 24];                // auf der Schwärze etwas heller als Schwarz
     for (let k = 0; k < innen.length; k++) {
       const o = innen[k] * 4, tt = t - S01[k] * SPAN;
-      let r = 10, gg = 14, b = 24;                                 // dunkler Grund
+      if (RAND[k]) { px[innen[k] * 4] = 38; px[innen[k] * 4 + 1] = 198; px[innen[k] * 4 + 2] = 218; px[innen[k] * 4 + 3] = schw ? 200 : 120; continue; }
+      let r = gr[0], gg = gr[1], b = gr[2];                         // dunkler Grund
       if (tt >= 0) {
         const cx = Math.min(sp.w - 1, Math.floor(tt * pps)), cy = Math.min(sp.h - 1, Math.floor((1 - U[k] * 0.62) * (sp.h - 1)));   // 0 bis etwa 2500 Hz
         const q = (cy * sp.w + cx) * 4, A = sp.d[q + 3] / 255 * 1.6;
