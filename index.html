@@ -1194,13 +1194,8 @@ function rundgang() {
   nach(7500, () => form('chel'));        // Schwärze allein dreimal so lang wie zuvor
   nach(9500, () => form('ruach'));
   nach(11500, () => { form('text'); setzeSchw(false); introSperre(false); });
-  // Intro beendet: Psalmtext steht, Kalligraphie weich auf 100 %
-  nach(11500, () => {
-    const op = document.getElementById('kalOp'), v0 = +op.value; let t0 = null;
-    const auf = ts => { if (aus) return; if (t0 === null) t0 = ts; const q = Math.min(1, (ts - t0) / 1000);
-      op.value = Math.round(v0 + (100 - v0) * (1 - Math.cos(Math.PI * q)) / 2); kalStyle(); if (q < 1) requestAnimationFrame(auf); };
-    requestAnimationFrame(auf);
-  });
+  // Intro beendet: Psalmtext steht, Kalligraphie direkt auf 100 %
+  nach(11500, () => { const op = document.getElementById('kalOp'); op.value = 100; kalStyle(); });
 }
 
 // ---- Welle: beim Erklingen eines Mem-Verses leuchten die Buchstaben des gerade gesprochenen Wortes auf,
