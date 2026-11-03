@@ -1157,8 +1157,8 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
   let los = false;
   const beginne = e => {
     if (los) return; los = true; if (e) e.preventDefault();
-    // Ton freischalten: im Moment der Berührung einmal stumm anspielen
-    try { MEM_TON.muted = true; spieleMemVers(97); setTimeout(() => { MEM_TON.pause(); MEM_TON.currentTime = 0; MEM_TON.muted = false; }, 60); } catch (_) {}
+    // Ton sofort mit dem ersten Antippen: die ganze Mem-Strophe, Vers 97 bis 104
+    spieleMemFolge(97);
     introSperre(true);
     start.classList.add('weg');
     // erst wenn die Fläche fort ist, beginnt das Ein- und Ausblenden (nichts überlagert sich)
@@ -1172,7 +1172,7 @@ function introSperre(an) {
   ['doubleClickZoom', 'scrollWheelZoom', 'touchZoom', 'boxZoom', 'dragging', 'keyboard'].forEach(k => { if (map[k]) map[k][an ? 'disable' : 'enable'](); });
 }
 
-// ---- Danach ein Rundgang: Schwärze und Mem-Vers 97, dann חֵילוֹתֶיהָ (2 s) und רוּחַ (2 s), zurück zum Psalmtext, Kalligraphie 100 % ----
+// ---- Danach ein Rundgang (der Ton läuft schon seit dem Antippen): Schwärze, dann חֵילוֹתֶיהָ (2 s) und רוּחַ (2 s), zurück zum Psalmtext, Kalligraphie 100 % ----
 function rundgang() {
   const schw = document.getElementById('schwOn'), bc = document.getElementById('formChel'), br = document.getElementById('formRuach');
   const alle = document.getElementById('alleOn'), nav = document.getElementById('nav');
@@ -1185,14 +1185,12 @@ function rundgang() {
   const nach = (ms, fn) => uhr.push(setTimeout(() => { if (!aus) fn(); }, ms));
   if (alle && !alle.checked) { alle.checked = true; alle.dispatchEvent(new Event('change')); }
   // Ton: Browser erlauben Ton oft erst nach einer Berührung; dann startet er beim ersten Antippen
-  spieleMemVers(97);
-  setzeSchw(true);                        // Schwärze zugleich mit dem Vers
-  map.flyTo(bildZuGeo(GOLD.cx, GOLD.cy), map.getZoom() + 1, { duration: 1.4 });   // ein Zoomschritt hinein, auf das Aleph zentriert
-  nach(5000, () => form('chel'));         // nach dem Vers (4,7 s)
-  nach(7000, () => form('ruach'));
-  nach(9000, () => { form('text'); setzeSchw(false); introSperre(false); });
+  setzeSchw(true);
+  nach(2500, () => form('chel'));
+  nach(4500, () => form('ruach'));
+  nach(6500, () => { form('text'); setzeSchw(false); introSperre(false); });
   // Intro beendet: Psalmtext steht, Kalligraphie weich auf 100 %
-  nach(9000, () => {
+  nach(6500, () => {
     const op = document.getElementById('kalOp'), v0 = +op.value; let t0 = null;
     const auf = ts => { if (aus) return; if (t0 === null) t0 = ts; const q = Math.min(1, (ts - t0) / 1000);
       op.value = Math.round(v0 + (100 - v0) * (1 - Math.cos(Math.PI * q)) / 2); kalStyle(); if (q < 1) requestAnimationFrame(auf); };
@@ -1226,6 +1224,12 @@ const MEM_WZEIT = {"97": [[0, 0.27], [0.27, 0.95], [0.95, 2.03], [2.21, 2.54], [
   }
   requestAnimationFrame(welle);
 })();
+
+// ---- Die ganze Mem-Strophe nacheinander (Vers 97–104); ein Klick auf einen Buchstaben beendet die Folge ----
+let memFolge = 0;
+function spieleMemFolge(v) { memFolge = v; spieleMemVers(v); }
+MEM_TON.addEventListener('ended', () => { if (memFolge && memFolge < 104) spieleMemFolge(memFolge + 1); else memFolge = 0; });
+memL.addEventListener('click', e => { if (e.target.classList && e.target.classList.contains('memton')) memFolge = 0; }, true);
 </script>
 
 </body>
