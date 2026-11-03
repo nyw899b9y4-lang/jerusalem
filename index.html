@@ -163,12 +163,12 @@
   #formRuach.on { background: #d9eeff; border-color: #fff; color: #000; }
   #mem text.memton { transition: fill .18s, stroke-width .18s, filter .18s; }
   #startFlaeche { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center;
-    background: rgba(5,7,12,.55); cursor: pointer; transition: opacity .9s ease; -webkit-tap-highlight-color: transparent; }
+    background: rgba(5,7,12,.55); cursor: pointer; transition: opacity .5s ease; -webkit-tap-highlight-color: transparent; }
   #startFlaeche span { font-family: 'SBL Hebrew','Ezra SIL','Frank Ruehl CLM','Times New Roman',serif; font-weight: 700;
     font-size: clamp(54px, 13vw, 128px); color: #fff; text-shadow: 0 0 18px rgba(38,198,218,.75), 0 2px 6px #000;
     animation: startPuls 2.4s ease-in-out infinite; }
   @keyframes startPuls { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
-  #startFlaeche.weg { opacity: 0; pointer-events: none; }
+  #startFlaeche.weg { opacity: 0; }
 </style>
 </head>
 <body>
@@ -1144,23 +1144,33 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
     if (s < P[P.length - 1][0]) requestAnimationFrame(schritt); else rundgang();
   }
   op.value = 70; kalStyle();
+  // Ausgangsbild: auf den Mittelpunkt des goldenen Kreises (das Aleph im Schnitt der Achsen) zentriert
+  map.setView(bildZuGeo(GOLD.cx, GOLD.cy), map.getZoom(), { animate: false });
   // Startfläche „סֹבּוּ צִיּוֹן“: das Antippen ist die Berührung, nach der der Browser Ton erlaubt
   const start = document.createElement('div');
-  start.id = 'startFlaeche'; start.setAttribute('role', 'button'); start.setAttribute('aria-label', 'Starten');
+  start.id = 'startFlaeche'; start.setAttribute('role', 'button'); start.setAttribute('aria-label', 'Starten'); start.tabIndex = 0;
   start.innerHTML = '<span dir="rtl">סֹבּוּ צִיּוֹן</span>';
   document.body.appendChild(start);
+  // Kein Tippen, Klicken oder Doppeltippen darf durch die Fläche zur Karte durchgehen (sonst zoomt sie mit)
+  ['pointerdown', 'pointerup', 'click', 'dblclick', 'touchstart', 'touchend', 'wheel'].forEach(t =>
+    start.addEventListener(t, e => { e.stopPropagation(); if (t !== 'pointerup') e.preventDefault(); }, { passive: false }));
   let los = false;
   const beginne = e => {
     if (los) return; los = true; if (e) e.preventDefault();
     // Ton freischalten: im Moment der Berührung einmal stumm anspielen
     try { MEM_TON.muted = true; spieleMemVers(97); setTimeout(() => { MEM_TON.pause(); MEM_TON.currentTime = 0; MEM_TON.muted = false; }, 60); } catch (_) {}
-    start.classList.add('weg'); setTimeout(() => start.remove(), 900);
-    requestAnimationFrame(schritt);
+    introSperre(true);
+    start.classList.add('weg');
+    // erst wenn die Fläche fort ist, beginnt das Ein- und Ausblenden (nichts überlagert sich)
+    setTimeout(() => { start.remove(); requestAnimationFrame(schritt); }, 520);
   };
   start.addEventListener('pointerup', beginne);
   start.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') beginne(e); });
-  start.tabIndex = 0;
 })();
+// Während des Intros reagiert die Karte nicht auf Zoomgesten, damit nur der eine Zoomschritt des Intros wirkt
+function introSperre(an) {
+  ['doubleClickZoom', 'scrollWheelZoom', 'touchZoom', 'boxZoom', 'dragging', 'keyboard'].forEach(k => { if (map[k]) map[k][an ? 'disable' : 'enable'](); });
+}
 
 // ---- Danach ein Rundgang: Schwärze und Mem-Vers 97, dann חֵילוֹתֶיהָ (2 s) und רוּחַ (2 s), zurück zum Psalmtext, Kalligraphie 100 % ----
 function rundgang() {
@@ -1168,7 +1178,7 @@ function rundgang() {
   const alle = document.getElementById('alleOn'), nav = document.getElementById('nav');
   if (!schw || !bc || !br) return;
   let aus = false; const uhr = [];
-  const stopp = () => { aus = true; uhr.forEach(clearTimeout); };
+  const stopp = () => { aus = true; uhr.forEach(clearTimeout); introSperre(false); };
   nav.addEventListener('pointerdown', stopp, { once: true });
   const setzeSchw = v => { if (schw.checked !== v) { schw.checked = v; schw.dispatchEvent(new Event('change')); } };
   const form = f => { if (FORM !== f) { if (f === 'text') (FORM === 'chel' ? bc : br).click(); else (f === 'chel' ? bc : br).click(); } };
@@ -1176,17 +1186,11 @@ function rundgang() {
   if (alle && !alle.checked) { alle.checked = true; alle.dispatchEvent(new Event('change')); }
   // Ton: Browser erlauben Ton oft erst nach einer Berührung; dann startet er beim ersten Antippen
   spieleMemVers(97);
-  setTimeout(() => {
-    if (!MEM_TON.paused) return;
-    const los = () => { if (!aus) spieleMemVers(97); };
-    document.addEventListener('pointerdown', los, { once: true, capture: true });
-    document.addEventListener('keydown', los, { once: true, capture: true });
-  }, 500);
   setzeSchw(true);                        // Schwärze zugleich mit dem Vers
-  map.flyTo(map.getCenter(), map.getZoom() + 1, { duration: 1.4 });   // dazu ein Zoomschritt hinein
+  map.flyTo(bildZuGeo(GOLD.cx, GOLD.cy), map.getZoom() + 1, { duration: 1.4 });   // ein Zoomschritt hinein, auf das Aleph zentriert
   nach(5000, () => form('chel'));         // nach dem Vers (4,7 s)
   nach(7000, () => form('ruach'));
-  nach(9000, () => { form('text'); setzeSchw(false); });
+  nach(9000, () => { form('text'); setzeSchw(false); introSperre(false); });
   // Intro beendet: Psalmtext steht, Kalligraphie weich auf 100 %
   nach(9000, () => {
     const op = document.getElementById('kalOp'), v0 = +op.value; let t0 = null;
