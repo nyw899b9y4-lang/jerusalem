@@ -163,12 +163,13 @@
   #formRuach.on { background: #d9eeff; border-color: #fff; color: #000; }
   #mem text.memton { transition: fill .18s, stroke-width .18s, filter .18s; }
   #startFlaeche { position: fixed; inset: 0; z-index: 5000; display: flex; align-items: center; justify-content: center;
-    background: rgba(5,7,12,.55); cursor: pointer; transition: opacity .5s ease; -webkit-tap-highlight-color: transparent; }
+    background: transparent; cursor: pointer; transition: opacity .5s ease; -webkit-tap-highlight-color: transparent; }
   #startFlaeche span { font-family: 'SBL Hebrew','Ezra SIL','Frank Ruehl CLM','Times New Roman',serif; font-weight: 700;
-    font-size: clamp(54px, 13vw, 128px); color: #fff; text-shadow: 0 0 18px rgba(38,198,218,.75), 0 2px 6px #000;
+    font-size: clamp(54px, 13vw, 128px); color: #fff; text-shadow: 0 0 3px #000, 0 0 14px rgba(0,0,0,.9), 0 0 26px rgba(38,198,218,.7);
     animation: startPuls 2.4s ease-in-out infinite; }
   @keyframes startPuls { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
   #startFlaeche.weg { opacity: 0; }
+  body.vorStart .gate, body.vorStart #nav { display: none; }
 </style>
 </head>
 <body>
@@ -1143,7 +1144,10 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
     op.value = Math.round(v); kalStyle();
     if (s < P[P.length - 1][0]) requestAnimationFrame(schritt); else rundgang();
   }
-  op.value = 70; kalStyle();
+  // Vor dem Start: nur Satellitenbild und „סֹבּוּ צִיּוֹן“ – Kalligraphie, Ebenen und Tor-Marker ausgeblendet
+  const alleCb = document.getElementById('alleOn');
+  const alleSetzen = v => { if (alleCb && alleCb.checked !== v) { alleCb.checked = v; alleCb.dispatchEvent(new Event('change')); } };
+  op.value = 0; kalStyle(); alleSetzen(false); document.body.classList.add('vorStart');
   // Ausgangsbild: auf den Mittelpunkt des goldenen Kreises (das Aleph im Schnitt der Achsen) zentriert
   map.setView(bildZuGeo(GOLD.cx, GOLD.cy), map.getZoom(), { animate: false });
   // Startfläche „סֹבּוּ צִיּוֹן“: das Antippen ist die Berührung, nach der der Browser Ton erlaubt
@@ -1159,6 +1163,7 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
     if (los) return; los = true; if (e) e.preventDefault();
     // Ton sofort mit dem ersten Antippen: die ganze Mem-Strophe, Vers 97 bis 104
     spieleMemFolge(97);
+    document.body.classList.remove('vorStart'); alleSetzen(true); op.value = 70; kalStyle();
     introSperre(true);
     start.classList.add('weg');
     // erst wenn die Fläche fort ist, beginnt das Ein- und Ausblenden (nichts überlagert sich)
@@ -1186,11 +1191,11 @@ function rundgang() {
   if (alle && !alle.checked) { alle.checked = true; alle.dispatchEvent(new Event('change')); }
   // Ton: Browser erlauben Ton oft erst nach einer Berührung; dann startet er beim ersten Antippen
   setzeSchw(true);
-  nach(2500, () => form('chel'));
-  nach(4500, () => form('ruach'));
-  nach(6500, () => { form('text'); setzeSchw(false); introSperre(false); });
+  nach(7500, () => form('chel'));        // Schwärze allein dreimal so lang wie zuvor
+  nach(9500, () => form('ruach'));
+  nach(11500, () => { form('text'); setzeSchw(false); introSperre(false); });
   // Intro beendet: Psalmtext steht, Kalligraphie weich auf 100 %
-  nach(6500, () => {
+  nach(11500, () => {
     const op = document.getElementById('kalOp'), v0 = +op.value; let t0 = null;
     const auf = ts => { if (aus) return; if (t0 === null) t0 = ts; const q = Math.min(1, (ts - t0) / 1000);
       op.value = Math.round(v0 + (100 - v0) * (1 - Math.cos(Math.PI * q)) / 2); kalStyle(); if (q < 1) requestAnimationFrame(auf); };
