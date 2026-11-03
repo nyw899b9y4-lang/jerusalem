@@ -1003,7 +1003,7 @@ function zeichneMem() {
       const t = add('text', { x: x - mx, y: y - my, 'font-size': size, 'text-anchor': 'middle', 'dominant-baseline': 'alphabetic',
         fill: abw ? '#fff' : ini ? '#1e6fe8' : '#4aa3ff', 'fill-opacity': '.92',
         stroke: '#1a1a1a', 'stroke-width': 1.8, 'paint-order': 'stroke',
-        style: `font-family:${BST_FONT};font-weight:700;pointer-events:all;cursor:pointer`, class: 'memton', 'data-v': MEM_VERS[i], transform: `rotate(${rot} ${x} ${y})` });
+        style: `font-family:${BST_FONT};font-weight:700;pointer-events:all;cursor:pointer`, class: 'memton', 'data-v': MEM_VERS[i], 'data-i': i, transform: `rotate(${rot} ${x} ${y})` });
       t.textContent = ch;
       if (abw) abwFenster(t, abw);
       if (ini && memNr[i]) { t.addEventListener('pointerenter', () => memNr[i].classList.add('zeig')); t.addEventListener('pointerleave', () => memNr[i].classList.remove('zeig')); }
@@ -1165,6 +1165,35 @@ function rundgang() {
   nach(6500, () => form('text'));
   nach(7300, () => setzeSchw(false));
 }
+
+// ---- Welle: beim Erklingen eines Mem-Verses leuchten die Buchstaben des gerade gesprochenen Wortes auf,
+// eine Lichtwelle läuft in Leserichtung durch das Wort (Wortzeiten wie in „Tehillim 119, 33 Verse“, Stimme Adler) ----
+const MEM_WORT = [0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 4, 4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 6, 6, 0, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 0, 0, 0, 1, 1, 1, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 0, 0, 0, 0, 0, 0, 0, 1, 1, 2, 2, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 5, 5, 5, 0, 0, 1, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 2, 2, 3, 3, 4, 4, 4, 4, 4, 5, 5, 6, 6, 6, 7, 7, 7];
+const MEM_WZEIT = {"97": [[0, 0.27], [0.27, 0.95], [0.95, 2.03], [2.21, 2.54], [2.54, 3.47], [3.47, 3.74], [3.74, 5.04]], "98": [[0.0, 1.18], [1.18, 2.1], [2.1, 3.25], [3.61, 3.88], [3.88, 4.59], [4.59, 4.81], [4.81, 6.24]], "99": [[0.0, 0.41], [0.41, 1.24], [1.24, 2.31], [2.63, 2.96], [2.96, 4.35], [4.45, 5.08], [5.08, 5.67]], "100": [[0.0, 1.04], [1.04, 2.25], [2.39, 2.64], [2.64, 3.61], [3.61, 5.23]], "101": [[0.0, 0.58], [0.58, 1.05], [1.05, 1.41], [2.09, 2.91], [2.91, 4.1], [4.1, 5.11], [5.33, 6.08], [6.08, 7.67]], "102": [[0.0, 1.17], [1.17, 1.39], [1.39, 2.35], [2.73, 3.02], [3.02, 3.49], [3.97, 5.28]], "103": [[0.0, 0.31], [0.31, 0.96], [0.96, 1.64], [1.64, 4.03], [4.27, 5.18], [5.18, 5.91]], "104": [[0.0, 1.34], [1.34, 2.5], [2.5, 2.78], [2.78, 3.83], [4.07, 5.09], [5.57, 5.99], [5.99, 6.79], [7.23, 10.26]]};   // je Vers: [Beginn, Ende] jedes Wortes in Sekunden ab Clipbeginn
+(function () {
+  let hell = [], letzt = '';
+  const aus = () => { hell.forEach(el => { el.style.fill = ''; el.style.stroke = ''; el.style.strokeWidth = ''; el.style.filter = ''; }); hell = []; };
+  function welle() {
+    requestAnimationFrame(welle);
+    const v = MEM_TON_VERS, z = v && MEM_WZEIT[v];
+    if (!z || MEM_TON.paused || MMODUS === 'punkte') { if (hell.length) { aus(); letzt = ''; } return; }
+    const t = MEM_TON.currentTime;
+    let w = z.findIndex(([a, b]) => t >= a && t < b);
+    if (w < 0) { if (hell.length) { aus(); letzt = ''; } return; }
+    const tx = [...memL.querySelectorAll('text.memton')];
+    const idx = []; MEM_VERS.forEach((x, i) => { if (x === v && MEM_WORT[i] === w) idx.push(i); });
+    const els = idx.map(i => tx.find(e => +e.dataset.i === i)).filter(Boolean);
+    if (letzt !== v + '-' + w) { aus(); hell = els; letzt = v + '-' + w; }
+    const [a, b] = z[w], p = (t - a) / (b - a), n = els.length;
+    els.forEach((el, k) => {
+      const d = p * (n + 1) - (k + 0.5), I = Math.exp(-d * d / 1.4);
+      el.style.fill = I > 0.35 ? '#ffffff' : '#d6ecff';
+      el.style.stroke = '#ffd400'; el.style.strokeWidth = (1.2 + 3.2 * I).toFixed(2);
+      el.style.filter = `drop-shadow(0 0 ${(2 + 8 * I).toFixed(1)}px rgba(255,230,120,${(0.35 + 0.6 * I).toFixed(2)}))`;
+    });
+  }
+  requestAnimationFrame(welle);
+})();
 </script>
 
 </body>
