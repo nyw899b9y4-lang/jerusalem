@@ -1133,11 +1133,38 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
     for (let k = 0; k < P.length - 1; k++) if (s < P[k + 1][0]) {
       const [a, va] = P[k], [b, vb] = P[k + 1]; v = va + (vb - va) * weich((s - a) / (b - a)); break; }
     op.value = Math.round(v); kalStyle();
-    if (s < P[P.length - 1][0]) requestAnimationFrame(schritt);
+    if (s < P[P.length - 1][0]) requestAnimationFrame(schritt); else rundgang();
   }
   op.value = 0; kalStyle();
   requestAnimationFrame(schritt);
 })();
+
+// ---- Danach ein Rundgang durch die Optionen: Mem-Vers 97 erklingt, Schwärze, חֵילוֹתֶיהָ (2 s), רוּחַ (2 s), zurück ----
+function rundgang() {
+  const schw = document.getElementById('schwOn'), bc = document.getElementById('formChel'), br = document.getElementById('formRuach');
+  const alle = document.getElementById('alleOn'), nav = document.getElementById('nav');
+  if (!schw || !bc || !br) return;
+  let aus = false; const uhr = [];
+  const stopp = () => { aus = true; uhr.forEach(clearTimeout); };
+  nav.addEventListener('pointerdown', stopp, { once: true });
+  const setzeSchw = v => { if (schw.checked !== v) { schw.checked = v; schw.dispatchEvent(new Event('change')); } };
+  const form = f => { if (FORM !== f) { if (f === 'text') (FORM === 'chel' ? bc : br).click(); else (f === 'chel' ? bc : br).click(); } };
+  const nach = (ms, fn) => uhr.push(setTimeout(() => { if (!aus) fn(); }, ms));
+  if (alle && !alle.checked) { alle.checked = true; alle.dispatchEvent(new Event('change')); }
+  // Ton: Browser erlauben Ton oft erst nach einer Berührung; dann startet er beim ersten Antippen
+  spieleMemVers(97);
+  setTimeout(() => {
+    if (!MEM_TON.paused) return;
+    const los = () => { if (!aus) spieleMemVers(97); };
+    document.addEventListener('pointerdown', los, { once: true, capture: true });
+    document.addEventListener('keydown', los, { once: true, capture: true });
+  }, 500);
+  nach(1000, () => setzeSchw(true));
+  nach(2500, () => form('chel'));
+  nach(4500, () => form('ruach'));
+  nach(6500, () => form('text'));
+  nach(7300, () => setzeSchw(false));
+}
 </script>
 
 </body>
