@@ -1116,12 +1116,12 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
   br.onclick = () => { setze(FORM === 'ruach' ? 'text' : 'ruach'); br.blur(); };
 })();
 
-// ---- Beim Öffnen: Kalligraphie einmal langsam ein- und ausblenden, dann bei 100 % stehen bleiben (etwa 4,6 s) ----
+// ---- Beim Öffnen: Kalligraphie einmal langsam ein- und ausblenden, dann bei 70 % stehen bleiben (etwa 4,6 s) ----
 (function () {
   const op = document.getElementById('kalOp'), on = document.getElementById('kalOn');
   if (!op || !on) return;
-  // Stützpunkte [Zeit in s, Deckkraft in %]: auf, ab, wieder ganz auf
-  const P = [[0, 0], [1.8, 100], [3.6, 0], [4.6, 100]];
+  // Stützpunkte [Zeit in s, Deckkraft in %]: auf, ab, auf 70 (nach dem Rundgang dann 100)
+  const P = [[0, 0], [1.8, 100], [3.6, 0], [4.6, 70]];
   const weich = t => (1 - Math.cos(Math.PI * t)) / 2;
   let t0 = null, abbruch = false;
   ['input', 'pointerdown'].forEach(ev => op.addEventListener(ev, () => abbruch = true, { once: true }));
@@ -1165,6 +1165,13 @@ function rundgang() {
   nach(4500, () => form('ruach'));
   nach(6500, () => form('text'));
   nach(7300, () => setzeSchw(false));
+  // Wenn alles wieder da ist: Kalligraphie in einer Sekunde weich auf 100 %
+  nach(7600, () => {
+    const op = document.getElementById('kalOp'), v0 = +op.value; let t0 = null;
+    const auf = ts => { if (aus) return; if (t0 === null) t0 = ts; const q = Math.min(1, (ts - t0) / 1000);
+      op.value = Math.round(v0 + (100 - v0) * (1 - Math.cos(Math.PI * q)) / 2); kalStyle(); if (q < 1) requestAnimationFrame(auf); };
+    requestAnimationFrame(auf);
+  });
 }
 
 // ---- Welle: beim Erklingen eines Mem-Verses leuchten die Buchstaben des gerade gesprochenen Wortes auf,
