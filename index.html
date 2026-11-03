@@ -1161,6 +1161,7 @@ function rundgang() {
     document.addEventListener('keydown', los, { once: true, capture: true });
   }, 500);
   setzeSchw(true);                        // Schwärze zugleich mit dem Vers
+  map.flyTo(map.getCenter(), map.getZoom() + 1, { duration: 1.4 });   // dazu ein Zoomschritt hinein
   nach(5000, () => form('chel'));         // nach dem Vers (4,7 s)
   nach(7000, () => form('ruach'));
   nach(9000, () => { form('text'); setzeSchw(false); });
