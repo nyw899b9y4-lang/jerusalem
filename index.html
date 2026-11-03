@@ -196,6 +196,7 @@
       <input type="range" id="kalOp" min="0" max="100" value="100" autocomplete="off"></div>
     <div class="ebene"><input type="checkbox" id="alleOn" checked autocomplete="off"><label for="alleOn">Buchstaben und Polar 782</label></div>
     <div class="ebene"><input type="checkbox" id="schwOn" autocomplete="off"><label for="schwOn">Schwärze</label></div>
+    <div class="ebene" id="tonZeile"><input type="checkbox" id="tonOn" checked autocomplete="off"><label for="tonOn">Ton</label></div>
     <div class="ebene"><button id="formChel" class="formbtn">חֵילוֹתֶיהָ</button><button id="formRuach" class="formbtn">רוּחַ</button></div>
     <div id="altNav" hidden>
     <div id="ziele"></div>
@@ -1184,7 +1185,8 @@ function rundgang() {
   if (!schw || !bc || !br) return;
   let aus = false; const uhr = [];
   const stopp = () => { aus = true; uhr.forEach(clearTimeout); introSperre(false); };
-  nav.addEventListener('pointerdown', stopp, { once: true });
+  // Ein Griff ins Menü hält den Rundgang an – außer beim Ton an/aus
+  nav.addEventListener('pointerdown', e => { if (aus || (e.target.closest && e.target.closest('#tonZeile'))) return; stopp(); });
   const setzeSchw = v => { if (schw.checked !== v) { schw.checked = v; schw.dispatchEvent(new Event('change')); } };
   const form = f => { if (FORM !== f) { if (f === 'text') (FORM === 'chel' ? bc : br).click(); else (f === 'chel' ? bc : br).click(); } };
   const nach = (ms, fn) => uhr.push(setTimeout(() => { if (!aus) fn(); }, ms));
@@ -1230,6 +1232,12 @@ let memFolge = 0;
 function spieleMemFolge(v) { memFolge = v; spieleMemVers(v); }
 MEM_TON.addEventListener('ended', () => { if (memFolge && memFolge < 104) spieleMemFolge(memFolge + 1); else memFolge = 0; });
 memL.addEventListener('click', e => { if (e.target.classList && e.target.classList.contains('memton')) memFolge = 0; }, true);
+
+// ---- Ton an/aus: stumm geschaltet läuft die Lesung (und das Wortleuchten) lautlos weiter ----
+(function () {
+  const ton = document.getElementById('tonOn'); if (!ton) return;
+  ton.onchange = () => { MEM_TON.muted = !ton.checked; ton.blur(); };
+})();
 </script>
 
 </body>
