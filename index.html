@@ -1116,12 +1116,12 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
   br.onclick = () => { setze(FORM === 'ruach' ? 'text' : 'ruach'); br.blur(); };
 })();
 
-// ---- Beim Öffnen: Kalligraphie einmal langsam ein- und ausblenden, dann bei 70 % stehen bleiben (etwa 4,6 s) ----
+// ---- Beim Öffnen: Kalligraphie einmal langsam ein- und ausblenden, dann bei 100 % stehen bleiben (etwa 4,6 s) ----
 (function () {
   const op = document.getElementById('kalOp'), on = document.getElementById('kalOn');
   if (!op || !on) return;
-  // Stützpunkte [Zeit in s, Deckkraft in %]: auf, ab, auf 70
-  const P = [[0, 0], [1.8, 100], [3.6, 0], [4.6, 70]];
+  // Stützpunkte [Zeit in s, Deckkraft in %]: auf, ab, wieder ganz auf
+  const P = [[0, 0], [1.8, 100], [3.6, 0], [4.6, 100]];
   const weich = t => (1 - Math.cos(Math.PI * t)) / 2;
   let t0 = null, abbruch = false;
   ['input', 'pointerdown'].forEach(ev => op.addEventListener(ev, () => abbruch = true, { once: true }));
