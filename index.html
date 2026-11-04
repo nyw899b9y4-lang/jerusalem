@@ -170,6 +170,7 @@
   @keyframes startPuls { 0%,100% { opacity: 1; } 50% { opacity: .6; } }
   #startFlaeche.weg { opacity: 0; }
   body.vorStart .gate, body.vorStart #nav { display: none; }
+  #gabrielBtn { padding: 3px 12px; } #gabrielBtn.on { background: #fff; border-color: #26c6da; color: #000; }
 </style>
 </head>
 <body>
@@ -198,6 +199,7 @@
     <div class="ebene"><input type="checkbox" id="schwOn" autocomplete="off"><label for="schwOn">Schwärze</label></div>
     <div class="ebene" id="tonZeile"><input type="checkbox" id="tonOn" checked autocomplete="off"><label for="tonOn">Ton</label></div>
     <div class="ebene"><button id="formChel" class="formbtn">חֵילוֹתֶיהָ</button><button id="formRuach" class="formbtn">רוּחַ</button></div>
+    <div class="ebene"><button id="gabrielBtn">Gabriel check up</button></div>
     <div id="altNav" hidden>
     <div id="ziele"></div>
     <div class="trenn"></div>
@@ -1300,6 +1302,46 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
     g.putImageData(bild, 0, 0);
   }
   requestAnimationFrame(male);
+})();
+
+// ---- „Gabriel check up“: die drei weiß markierten Abweichungen der Kalligraphie deutlich hervorheben ----
+(function () {
+  const knopf = document.getElementById('gabrielBtn'); if (!knopf) return;
+  const ebene = document.createElementNS(NS, 'svg');
+  ebene.id = 'gabriel'; ebene.setAttribute('width', KAL.w); ebene.setAttribute('height', KAL.h);
+  ebene.setAttribute('viewBox', `0 0 ${KAL.w} ${KAL.h}`);
+  ebene.style.cssText = 'position:absolute;left:0;top:0;overflow:visible;pointer-events:none;z-index:260;display:none';
+  wrap.appendChild(ebene);
+  const STELLEN = () => [lage(153), mlage(175), mlage(209)];   // Waw V. 46 (א), Mem V. 103 (ך), Mem V. 104 (ח)
+  const add = (tag, a, p) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); (p || ebene).appendChild(e); return e; };
+  function zeichne() {
+    while (ebene.firstChild) ebene.removeChild(ebene.firstChild);
+    STELLEN().forEach(([x, y]) => {
+      // fester, blinkender Ring
+      const r1 = add('circle', { cx: x, cy: y, r: 34, fill: 'none', stroke: '#ffffff', 'stroke-width': 7 });
+      add('animate', { attributeName: 'stroke-opacity', values: '1;0.15;1', dur: '0.9s', repeatCount: 'indefinite' }, r1);
+      const r2 = add('circle', { cx: x, cy: y, r: 34, fill: 'none', stroke: '#26c6da', 'stroke-width': 3 });
+      add('animate', { attributeName: 'stroke-opacity', values: '0.2;1;0.2', dur: '0.9s', repeatCount: 'indefinite' }, r2);
+      // sich ausbreitende Welle
+      const r3 = add('circle', { cx: x, cy: y, r: 34, fill: 'none', stroke: '#ffffff', 'stroke-width': 4 });
+      add('animate', { attributeName: 'r', values: '34;120', dur: '1.4s', repeatCount: 'indefinite' }, r3);
+      add('animate', { attributeName: 'stroke-opacity', values: '0.9;0', dur: '1.4s', repeatCount: 'indefinite' }, r3);
+    });
+  }
+  let an = false;
+  knopf.onclick = () => {
+    an = !an; knopf.classList.toggle('on', an); knopf.blur();
+    if (an) {
+      // Psalmtext und Ebenen zeigen, damit die weißen Buchstaben zu sehen sind
+      if (FORM !== 'text') document.getElementById(FORM === 'chel' ? 'formChel' : 'formRuach').click();
+      const alle = document.getElementById('alleOn');
+      if (alle) { if (!alle.checked) { alle.checked = true; alle.dispatchEvent(new Event('change')); } }
+      else ['v41Btn', 'memBtn'].forEach(id => { const b = document.getElementById(id); if (b && !b.classList.contains('on')) b.click(); });
+      zeichne(); ebene.style.display = '';
+      const p = STELLEN().map(([x, y]) => bildZuGeo(x, y));
+      map.flyToBounds(L.latLngBounds(p), { padding: [90, 90], maxZoom: 17.5, duration: 1.2 });
+    } else ebene.style.display = 'none';
+  };
 })();
 </script>
 
