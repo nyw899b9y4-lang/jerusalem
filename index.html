@@ -171,6 +171,12 @@
   #startFlaeche.weg { opacity: 0; }
   body.vorStart .gate, body.vorStart #nav { display: none; }
   #gabrielBtn { padding: 3px 12px; } #gabrielBtn.on { background: #fff; border-color: #26c6da; color: #000; }
+  .leaflet-control-zoom { position: relative; }
+  .zoomzahl { position: absolute; right: calc(100% + 8px); top: 50%; transform: translateY(-50%); white-space: nowrap;
+    background: rgba(20,22,28,.88); color: #e9e6df; border: 1px solid #4a4f5c; border-radius: 6px; padding: 3px 8px;
+    font: 600 13px/1.2 system-ui, sans-serif; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .zoomzahl::before { content: 'Zoom '; font-weight: 400; color: #aeb4c0; }
+  .leaflet-control-zoom:hover .zoomzahl, .leaflet-control-zoom.zeigZoom .zoomzahl { opacity: 1; }
 </style>
 </head>
 <body>
@@ -1342,6 +1348,16 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
       map.flyToBounds(L.latLngBounds(p), { padding: [90, 90], maxZoom: 17.5, duration: 1.2 });
     } else ebene.style.display = 'none';
   };
+})();
+
+// ---- Zoomstufe am +/−-Feld: erscheint beim Überfahren (auf Touch-Geräten kurz nach jedem Zoomen) ----
+(function () {
+  const zc = document.querySelector('.leaflet-control-zoom'); if (!zc) return;
+  const z = document.createElement('div'); z.className = 'zoomzahl'; zc.appendChild(z);
+  const zeige = () => { z.textContent = map.getZoom().toFixed(2).replace('.', ','); };
+  map.on('zoom zoomend', zeige); zeige();
+  let uhr = null;
+  map.on('zoomend', () => { if (matchMedia('(hover: none)').matches) { zc.classList.add('zeigZoom'); clearTimeout(uhr); uhr = setTimeout(() => zc.classList.remove('zeigZoom'), 1800); } });
 })();
 </script>
 
