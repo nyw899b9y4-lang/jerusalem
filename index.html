@@ -177,6 +177,13 @@
     font: 600 13px/1.2 system-ui, sans-serif; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .zoomzahl::before { content: 'Zoom '; font-weight: 400; color: #aeb4c0; }
   .leaflet-control-zoom:hover .zoomzahl, .leaflet-control-zoom.zeigZoom .zoomzahl { opacity: 1; }
+  .zoomzahl { top: 0 !important; transform: none !important; }
+  .mauskoord { position: absolute; right: calc(100% + 8px); bottom: 0; white-space: nowrap; text-align: right;
+    background: rgba(20,22,28,.88); color: #e9e6df; border: 1px solid #4a4f5c; border-radius: 6px; padding: 3px 8px;
+    font: 500 12px/1.45 system-ui, sans-serif; font-variant-numeric: tabular-nums; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .mauskoord span { color: #aeb4c0; }
+  .mauskoord.an { opacity: 1; }
+  @media (hover: none) { .mauskoord { display: none; } }
 </style>
 </head>
 <body>
@@ -1358,6 +1365,23 @@ const LUPE_FELD = {"x": 2652, "y": 1380, "w": 212, "h": 235, "bits": "AAAwAAAAAA
   map.on('zoom zoomend', zeige); zeige();
   let uhr = null;
   map.on('zoomend', () => { if (matchMedia('(hover: none)').matches) { zc.classList.add('zeigZoom'); clearTimeout(uhr); uhr = setTimeout(() => zc.classList.remove('zeigZoom'), 1800); } });
+})();
+
+// ---- Koordinaten des Mauszeigers neben dem +/−-Feld: GPS und, innerhalb der Kalligraphie, Bildpixel X/Y ----
+function geoZuBild(lat, lon) {
+  const a = KAL.rot * rad, u = (lon - KAL.lon) * 111320 * Math.cos(KAL.lat * rad) / KAL.mpp, v = -(lat - KAL.lat) * 111320 / KAL.mpp;
+  return [KAL.w / 2 + Math.cos(a) * u + Math.sin(a) * v, KAL.h / 2 - Math.sin(a) * u + Math.cos(a) * v];
+}
+(function () {
+  const zc = document.querySelector('.leaflet-control-zoom'); if (!zc) return;
+  const k = document.createElement('div'); k.className = 'mauskoord'; zc.appendChild(k);
+  const f = (x, n) => x.toFixed(n).replace('.', ',');
+  map.on('mousemove', e => {
+    const { lat, lng } = e.latlng, [x, y] = geoZuBild(lat, lng);
+    const bild = x >= 0 && y >= 0 && x <= KAL.w && y <= KAL.h ? `<br><span>Bild</span> X ${Math.round(x)} · Y ${Math.round(y)}` : '';
+    k.innerHTML = `${f(lat, 6)}° N · ${f(lng, 6)}° O${bild}`; k.classList.add('an');
+  });
+  map.on('mouseout', () => k.classList.remove('an'));
 })();
 </script>
 
