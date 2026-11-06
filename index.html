@@ -1092,7 +1092,7 @@ function label(p) {
   return L.marker([p.lat, p.lon], { interactive: false, icon: L.divIcon({ className: 'gate', iconSize: null,
     html: `<i></i><span>${p.en}${p.ar ? `<br><b dir="rtl">${p.ar}</b>` : ''}</span>` }) }).addTo(map);
 }
-gates.forEach(label); label(MAR_SABA);
+gates.forEach(label);   // Mar Saba vorerst ausgeblendet
 // (Verbindungslinie Mar Saba – Damaskustor entfernt, für klare Sicht)
 
 // ---- Navigationsfeld: über die Tore ansteuern ----
@@ -1100,12 +1100,11 @@ const zielBox = document.getElementById('ziele');
 const ziele = [
   { en: 'Übersicht', ar: '', fit: true },
   { en: 'Altstadt', ar: 'القدس', lat: 31.7780, lon: 35.2320, z: 16 },
-  ...gates.map(g => ({ ...g, z: 18 })),
-  { ...MAR_SABA, z: 17 }
+  ...gates.map(g => ({ ...g, z: 18 }))
 ];
 function zeige(z, btn) {
   document.querySelectorAll('.ziel').forEach(b => b.classList.toggle('aktiv', b === btn));
-  if (z.fit) map.flyToBounds([[MAR_SABA.lat, MAR_SABA.lon], [DAMASKUS.lat, DAMASKUS.lon]], { padding: [40, 40], duration: 1.2 });
+  if (z.fit) map.flyToBounds(kreisBounds(), { padding: [6, 6], duration: 1.2 });
   else map.flyTo([z.lat, z.lon], z.z, { duration: 1.2 });
   if (matchMedia('(pointer: coarse)').matches && !z.fit) document.getElementById('nav').classList.add('zu');
 }
@@ -1170,7 +1169,6 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
   const alleSetzen = v => { if (alleCb && alleCb.checked !== v) { alleCb.checked = v; alleCb.dispatchEvent(new Event('change')); } };
   op.value = 0; kalStyle(); alleSetzen(false); document.body.classList.add('vorStart');
   // Ausgangsbild: auf den Mittelpunkt des goldenen Kreises (das Aleph im Schnitt der Achsen) zentriert
-  map.setView(bildZuGeo(GOLD.cx, GOLD.cy), map.getZoom(), { animate: false });
   // Startfläche „סֹבּוּ צִיּוֹן“: das Antippen ist die Berührung, nach der der Browser Ton erlaubt
   const start = document.createElement('div');
   start.id = 'startFlaeche'; start.setAttribute('role', 'button'); start.setAttribute('aria-label', 'Starten'); start.tabIndex = 0;
@@ -1414,8 +1412,17 @@ function geoZuBild(lat, lon) {
 // ---- Fernsicht: bis Zoom 13,75 nur die gelben Tor-Punkte; der Name erscheint beim Überfahren des Punktes ----
 (function () {
   const m = document.getElementById('map');
-  const setze = () => m.classList.toggle('fernsicht', map.getZoom() <= 13.75);
+  const setze = () => m.classList.toggle('fernsicht', map.getZoom() <= FERN_Z);
   map.on('zoomend', setze); setze();
+})();
+
+// ---- Start an das Gerät angepasst: der goldene Kreis füllt den Ausschnitt, auf iPhone wie MacBook gleich ----
+function kreisBounds() { return L.latLng(bildZuGeo(GOLD.cx, GOLD.cy)).toBounds(2 * GOLD.r * KAL.mpp * 1.02); }
+var FERN_Z = 13.75;   // var: wird schon vorher von der Fernsicht gelesen
+(function () {
+  map.fitBounds(kreisBounds(), { padding: [6, 6], animate: false });
+  FERN_Z = map.getZoom() - 0.5;          // Fernsicht (nur Tor-Punkte) ab einer halben Stufe unter dem Startbild
+  document.getElementById('map').classList.toggle('fernsicht', map.getZoom() <= FERN_Z);
 })();
 </script>
 
