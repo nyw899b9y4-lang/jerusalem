@@ -184,6 +184,9 @@
   .mauskoord span { color: #aeb4c0; }
   .mauskoord.an { opacity: 1; }
   @media (hover: none) { .mauskoord { display: none; } }
+  #polar text.halo { stroke: #fff; fill: #fff; pointer-events: none; }
+  #startFlaeche.wisch span { animation: none; transform: scale(1.06); transition: transform .3s; }
+  #startFlaeche::after { content: 'antippen'; position: absolute; bottom: 18%; left: 0; right: 0; text-align: center; color: #fff; font: 500 15px system-ui, sans-serif; letter-spacing: .12em; text-shadow: 0 0 6px #000, 0 0 2px #000; opacity: .85; }
 </style>
 </head>
 <body>
@@ -1179,13 +1182,24 @@ kalTransform(map.latLngToLayerPoint(kalLL), map.getZoom());
     if (los) return; los = true; if (e) e.preventDefault();
     // Ton sofort mit dem ersten Antippen: die ganze Mem-Strophe, Vers 97 bis 104
     spieleMemFolge(97);
+    // Falls der Browser den Ton trotzdem sperrt: beim nächsten Antippen der Seite starten
+    setTimeout(() => { if (MEM_TON.paused && memFolge) {
+      const los = () => { if (MEM_TON.paused && memFolge) spieleMemFolge(memFolge); };
+      document.addEventListener('pointerup', los, { once: true, capture: true });
+    } }, 600);
     document.body.classList.remove('vorStart'); alleSetzen(true); op.value = 70; kalStyle();
     introSperre(true);
     start.classList.add('weg');
     // erst wenn die Fläche fort ist, beginnt das Ein- und Ausblenden (nichts überlagert sich)
     setTimeout(() => { start.remove(); requestAnimationFrame(schritt); }, 520);
   };
-  start.addEventListener('pointerup', beginne);
+  // Nur ein echtes Antippen startet (beim Wischen erlaubt der Browser keinen Ton)
+  let p0 = null;
+  start.addEventListener('pointerdown', e => { p0 = [e.clientX, e.clientY]; });
+  start.addEventListener('pointerup', e => {
+    if (p0 && Math.hypot(e.clientX - p0[0], e.clientY - p0[1]) > 14) { p0 = null; start.classList.add('wisch'); setTimeout(() => start.classList.remove('wisch'), 900); return; }
+    beginne(e);
+  });
   start.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') beginne(e); });
 })();
 // Während des Intros reagiert die Karte nicht auf Zoomgesten, damit nur der eine Zoomschritt des Intros wirkt
@@ -1382,6 +1396,17 @@ function geoZuBild(lat, lon) {
     k.innerHTML = `${f(lat, 6)}° N · ${f(lng, 6)}° O${bild}`; k.classList.add('an');
   });
   map.on('mouseout', () => k.classList.remove('an'));
+})();
+
+// ---- Umriss der äußeren Ringbuchstaben und Zahlen als eigene Ebene darunter:
+// Safari auf dem iPhone legt den weißen Umriss sonst über die Farbe, die Buchstaben wirken dann weiß ----
+(function () {
+  const p = document.getElementById('polar'); if (!p) return;
+  p.querySelectorAll('text').forEach(t => {
+    const h = t.cloneNode(true); h.removeAttribute('class'); h.setAttribute('class', 'halo');
+    h.setAttribute('fill', '#fff'); t.parentNode.insertBefore(h, t);
+    t.style.stroke = 'none';
+  });
 })();
 </script>
 
