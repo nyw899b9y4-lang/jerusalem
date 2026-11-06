@@ -122,7 +122,7 @@
     background: #ffd400; border: 1px solid #000; border-radius: 50%; }
   .gate span { position: absolute; left: 8px; top: -8px; white-space: nowrap;
     font-size: 11px; line-height: 1.2; color: #fff; text-shadow: 0 0 3px #000, 0 0 3px #000; }
-  .gate b { font-weight: normal; font-size: 12px; }
+  .gate b { font-weight: 300; font-size: 12px; font-family: 'Times New Roman', 'Noto Naskh Arabic', serif; text-shadow: 0 0 2px #000, 0 0 1px #000; }
   #kalWrap { position: absolute; left: 0; top: 0; width: 4538px; height: 6000px; transform-origin: 0 0; pointer-events: none; }
   #kalWrap img { position: absolute; max-width: none; }
   #polar { position: absolute; left: 0; top: 0; overflow: visible; display: none; }
@@ -186,7 +186,9 @@
   @media (hover: none) { .mauskoord { display: none; } }
   #polar text.halo { stroke: #fff; fill: #fff; pointer-events: none; }
   #startFlaeche.wisch span { animation: none; transform: scale(1.06); transition: transform .3s; }
-  #startFlaeche::after { content: 'antippen'; position: absolute; bottom: 18%; left: 0; right: 0; text-align: center; color: #fff; font: 500 15px system-ui, sans-serif; letter-spacing: .12em; text-shadow: 0 0 6px #000, 0 0 2px #000; opacity: .85; }
+  #map.fernsicht .gate span { display: none; }
+  #map.fernsicht .gate i { pointer-events: auto; cursor: default; width: 12px; height: 12px; left: -6px; top: -6px; }
+  #map.fernsicht .gate i:hover + span { display: block; }
 </style>
 </head>
 <body>
@@ -880,7 +882,7 @@ function zeichneChet() {
     const anker = ca > 0.35 ? 'start' : ca < -0.35 ? 'end' : 'middle';
     const dy = Math.abs(ca) <= 0.35 ? Math.sign(Math.sin(a)) * 12 : 0;
     // Hebräischer Torname, weiß; nur sichtbar, wenn die Schwärze eingeschaltet ist (dann fehlen die Tor-Marker)
-    add('text', { class: 'torname', x: lx, y: ly + dy, 'font-size': 24, 'text-anchor': anker, 'dominant-baseline': 'central', fill: '#fff',
+    add('text', { class: 'torname', x: lx, y: ly + dy, 'font-size': 32, 'text-anchor': anker, 'dominant-baseline': 'central', fill: '#fff',
       stroke: '#000', 'stroke-width': 4, 'paint-order': 'stroke', 'stroke-linejoin': 'round',
       style: `font-family:${BST_FONT};font-weight:700` }, g).textContent = (TOR_NAMEN[c.tor] || { he: c.tor }).he;
   });
@@ -1407,6 +1409,13 @@ function geoZuBild(lat, lon) {
     h.setAttribute('fill', '#fff'); t.parentNode.insertBefore(h, t);
     t.style.stroke = 'none';
   });
+})();
+
+// ---- Fernsicht: bis Zoom 13,75 nur die gelben Tor-Punkte; der Name erscheint beim Überfahren des Punktes ----
+(function () {
+  const m = document.getElementById('map');
+  const setze = () => m.classList.toggle('fernsicht', map.getZoom() <= 13.75);
+  map.on('zoomend', setze); setze();
 })();
 </script>
 
